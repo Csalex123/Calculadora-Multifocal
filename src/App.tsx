@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Formik, Field, Form } from "formik";
+import Webcam from "react-webcam";
+import Tesseract from "tesseract.js";
 import {
   Upload,
   Download,
@@ -13,6 +15,7 @@ import {
   Clipboard,
   EyeOff,
   Eye,
+  Camera,
   Eye as EyeIcon,
   EyeOff as EyeOffIcon,
 } from "lucide-react";
@@ -50,6 +53,8 @@ function App() {
   const [mostrarHistorico, setMostrarHistorico] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [botaoCalcularAtivo, setBotaoCalcularAtivo] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const webcamRef = useRef<Webcam>(null);
   const itensPorPagina = 3;
 
   const initialValues = {
@@ -164,6 +169,19 @@ function App() {
     setMostrarConfirmacao(false);
   };
 
+  const captureImage = async () => {
+    const imageSrc = webcamRef.current?.getScreenshot();
+    if (imageSrc) {
+      setReceitaImagem(imageSrc);
+      setShowCamera(false);
+      Tesseract.recognize(imageSrc, "eng").then(({ data: { text } }) => {
+        console.log(text);
+        // Process the text to extract the required fields
+        // Example: setFieldValue("longeOD.esferico", extractedValue);
+      });
+    }
+  };
+
   const InputMedicao = ({
     label,
     section,
@@ -249,6 +267,13 @@ function App() {
                   Mostrar Histórico
                 </>
               )}
+            </button>
+            <button
+              onClick={() => setShowCamera(!showCamera)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              <Camera className="w-5 h-5" />
+              {showCamera ? "Fechar Câmera" : "Abrir Câmera"}
             </button>
           </div>
         </div>
@@ -340,6 +365,23 @@ function App() {
             )}
           </Formik>
         </div>
+
+        {showCamera && (
+          <div className="mt-8">
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              className="w-full max-w-md rounded-lg shadow-lg"
+            />
+            <button
+              onClick={captureImage}
+              className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Capturar Imagem
+            </button>
+          </div>
+        )}
 
         {resultado !== null && (
           <div className="mt-8 p-4 bg-red-900 text-red-200 rounded-lg shadow-lg">
